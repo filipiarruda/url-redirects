@@ -27,4 +27,9 @@ class Redirect extends Model
     {
         return $this->active;
     }
+
+    public function logs()
+    {
+        return $this->hasMany(RedirectLog::class, 'redirect_id');
+    }
 }
