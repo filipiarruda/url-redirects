@@ -6,21 +6,39 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Redirect;
 use App\Models\RedirectLog;
+use Hashids\Hashids;
+use Illuminate\Support\Facades\Validator;
 
 class RedirectController extends Controller
 {
+    protected $hashids;
+
+    public function __construct(Hashids $hashids)
+    {
+        $this->hashids = $hashids;
+    }
+
     public function store(Request $request)
     {
-        // Validate the request data
-        $validatedData = $request->validate([
-            'url' => 'required|url',
-            'code' => 'required|string|max:10|unique:redirects,code',
+        $validator = Validator::make($request->all(), [
+            'url' => ['required', 'regex:/^https:\/\/.+$/'],
+        ], [
+            'url.regex' => 'Só é permitido cadastrar redirecionamento a URLs HTTPS. Verifique sua URL e tente novamente.',
         ]);
 
-        // Create a new redirect
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $lastId = Redirect::max('id') ?? 0;
+        $nextId = $lastId + 1;
+        $code = $this->hashids->encode($nextId);
+
         $redirect = Redirect::create([
-            'redirect_url' => $validatedData['url'],
-            'code' => $validatedData['code'],
+            'redirect_url' => $request->url,
+            'code' => $code,
             'active' => true,
         ]);
 
@@ -31,9 +49,9 @@ class RedirectController extends Controller
     public function index()
     {
         $redirects = Redirect::all()->map(function ($item) {
-        $item->short_url = url('/r/' . $item->code);
-        return $item;
-    });
+            $item->short_url = url('/r/' . $item->code);
+            return $item;
+        });
 
         return response()->json(['redirects' => $redirects]);
     }
@@ -56,7 +74,7 @@ class RedirectController extends Controller
             }),
             'last_10_days_access' => $lastDaysAccess,
         ];
-        
+
         $redirect->stats = $stats;
         return response()->json(['redirect' => $redirect]);
     }
