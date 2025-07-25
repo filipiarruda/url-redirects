@@ -2,10 +2,16 @@
 
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
+use App\Livewire\RedirectUrlForm;
+use App\Http\Controllers\RedirectController;
 
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
+
+Route::get('/redirects', RedirectUrlForm::class)->name('redirects.form');
+
+Route::get('/r/{code}', [RedirectController::class, 'redirectUrl'])->name('redirects.redirect');
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
