@@ -31,12 +31,13 @@ class RedirectController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-
+        $referer = request()->getHost();
+        $validatedReferer = strpos($request->url, $referer);
         $validateUrlStatusCode = $this->validateUrlStatus($request->url);
 
-        if ($validateUrlStatusCode !== 200) {
+        if ($validateUrlStatusCode !== 200 || !$validatedReferer) {
             return response()->json([
-                'message' => 'A URL fornecida não está acessível ou não é válida.'
+                'message' => 'A URL fornecida não é válida.'
             ], 422);
         }
 
