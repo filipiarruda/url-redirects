@@ -90,10 +90,10 @@ class RedirectController extends Controller
     private function validateUrlStatus ($url)
     {
         $ch = curl_init();
-        curl_setopt(CURLOPT_URL, $url);
-        curl_setopt(CURLOPT_NOBODY, true);
-        curl_setopt(CURLOPT_RETURNTRANSFER, true);
-        curl_setopt(CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_NOBODY, true);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
         curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
