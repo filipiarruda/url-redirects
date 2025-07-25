@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Ramsey\Uuid\Uuid;
+use Illuminate\Support\Facades\DB;
 
 class RedirectLog extends Model
 {
@@ -22,4 +22,32 @@ class RedirectLog extends Model
     }
 
 
+
+    public static function topReferrers($redirectId)
+    {
+        return self::select('request_referer', DB::raw('count(*) as total'))
+            ->where('redirect_id', $redirectId)
+            ->whereNotNull('request_referer')
+            ->groupBy('request_referer')
+            ->orderByDesc('total')
+            ->take(5)
+            ->get();
+    }
+
+    public static function lastDaysAccess($redirectId)
+    {
+        $logs = self::select(
+            DB::raw('DATE(created_at) as date'),
+            DB::raw('count(*) as total'),
+            DB::raw('count(distinct request_ip) as unique_ips')
+        )
+        ->where('redirect_id', '=', $redirectId)
+        ->where('created_at', '>=', now()->subDays(10))
+        ->groupBy('date')
+        ->orderBy('date', 'desc')
+        ->get();
+
+        return $logs;
+
+    }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Redirect;
+use App\Models\RedirectLog;
 
 class RedirectController extends Controller
 {
@@ -41,11 +42,22 @@ class RedirectController extends Controller
     public function stats($code)
     {
         $redirect = Redirect::where('code', $code)->firstOrFail();
-        // $stats = [
-        //     'total_accesses' => $redirect->logs()->count(),
-        //     'last_access' => optional($redirect->getLastAccess())->created_at,
-        // ];
+        $topReferers = RedirectLog::topReferrers($redirect->id);
+        $lastDaysAccess = RedirectLog::lastDaysAccess($redirect->id);
 
+        $stats = [
+            'total_accesses' => $redirect->logs()->count(),
+            'unique_ips' => $redirect->logs()->distinct('request_ip')->count('request_ip'),
+            'top_referers' => $topReferers->map(function ($item) {
+                return [
+                    'referer' => $item->request_referer,
+                    'total' => $item->total,
+                ];
+            }),
+            'last_10_days_access' => $lastDaysAccess,
+        ];
+        
+        $redirect->stats = $stats;
         return response()->json(['redirect' => $redirect]);
     }
 }
