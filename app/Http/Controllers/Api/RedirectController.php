@@ -32,6 +32,14 @@ class RedirectController extends Controller
             ], 422);
         }
 
+        $validateUrlStatusCode = $this->validateUrlStatus($request->url);
+
+        if ($validateUrlStatusCode !== 200) {
+            return response()->json([
+                'message' => 'A URL fornecida não está acessível ou não é válida.'
+            ], 422);
+        }
+
         $lastId = Redirect::max('id') ?? 0;
         $nextId = $lastId + 1;
         $code = $this->hashids->encode($nextId);
@@ -77,5 +85,19 @@ class RedirectController extends Controller
 
         $redirect->stats = $stats;
         return response()->json(['redirect' => $redirect]);
+    }
+
+    private function validateUrlStatus ($url)
+    {
+        $ch = curl_init();
+        curl_setopt(CURLOPT_URL, $url);
+        curl_setopt(CURLOPT_NOBODY, true);
+        curl_setopt(CURLOPT_RETURNTRANSFER, true);
+        curl_setopt(CURLOPT_TIMEOUT, 10);
+        curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        return $httpCode;
     }
 }
